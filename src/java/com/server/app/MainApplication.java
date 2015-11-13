@@ -39,35 +39,35 @@ public class MainApplication extends AbstractFacade<Device> implements MessageRe
 {
     private EntityManager entityManager;
     private EntityManagerFactory entityManagerFactory;
-    
+
     public MainApplication()
     {
         super(Device.class);
     }
-    
+
     @PostConstruct
     void initiate()
     {
         CCSServer.getInstance().setMessageReceivedListener(this);
-        
+
         entityManagerFactory = Persistence.createEntityManagerFactory("GCM_XMPPPU");
         entityManager = entityManagerFactory.createEntityManager();
     }
-    
+
     @PreDestroy
     void destroy()
     {
         entityManager.close();
         entityManagerFactory.close();
     }
-    
+
     @Override
     public void onMessageReceivedJson(JSONObject jSONObject)
     {
         if(jSONObject.containsKey(JsonKey.DATA))
         {
             JSONObject json = (JSONObject)JSONValue.parse(jSONObject.get(JsonKey.DATA).toString());
-            
+
             if(json.containsKey(JsonKey.ACTION))
             {
                 switch(json.get(JsonKey.ACTION).toString())
@@ -76,7 +76,7 @@ public class MainApplication extends AbstractFacade<Device> implements MessageRe
                     {
                         Gson gson = new Gson();
                         Device device = register(gson.fromJson(json.toString(), Device.class));
-                        
+
                         try
                         {
                             GCMMessage message = GCMMessage.with(jSONObject.get(JsonKey.FROM), jSONObject.get(JsonKey.MESSAGE_ID))
@@ -89,7 +89,7 @@ public class MainApplication extends AbstractFacade<Device> implements MessageRe
                         {
                             Logger.getLogger(MainApplication.class.getName()).log(Level.SEVERE, null, ex);
                         }
-                        
+
                         break;
                     }
                     default:
@@ -101,7 +101,7 @@ public class MainApplication extends AbstractFacade<Device> implements MessageRe
             }
         }
     }
-    
+
     private Device register(Device device)
     {
         try
@@ -110,12 +110,12 @@ public class MainApplication extends AbstractFacade<Device> implements MessageRe
             {
                 TypedQuery<Device> queryExists = getEntityManager().createNamedQuery("Device.findByRegistrationId", Device.class);
                 queryExists.setParameter("registrationId", device.getRegistrationId());
-                
+
                 if(queryExists.getResultList().isEmpty())
                 {
                     /* Gera um novo Id */
                     TypedQuery<Integer> query = getEntityManager().createNamedQuery("Device.gerateId", Integer.class);
-                    
+
                     device.setId(query.getSingleResult());
                     device.setRegistrationDate(Calendar.getInstance().getTimeInMillis());
                     create(device);
@@ -134,10 +134,10 @@ public class MainApplication extends AbstractFacade<Device> implements MessageRe
         {
             Logger.getLogger(MainApplication.class.getName()).log(Level.SEVERE, null, ex);
         }
-        
+
         return device;
     }
-    
+
     @Override
     protected EntityManager getEntityManager()
     {
